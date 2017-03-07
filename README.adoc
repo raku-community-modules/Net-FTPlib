@@ -1,0 +1,8 @@
+= Net-FTPlib
+:toc-title: contents
+
+A Perl 6 bind for http://nbpfaus.net/~pfau/ftplib[ftplib].
+
+== TODO
+
+In Progressing.
