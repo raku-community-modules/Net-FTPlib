@@ -3,6 +3,16 @@
 
 A Perl 6 bind for http://nbpfaus.net/~pfau/ftplib[ftplib].
 
-== TODO
+== Installation
 
-In Progressing.
+* install with panda
+
+    panda install Net::FTPlib
+
+* install with zef
+
+    zef install Net::FTPlib
+
+== License
+
+    The MIT Lincese (MIT).
