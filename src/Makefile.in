@@ -8,4 +8,4 @@ clean:
 	rm -f ${destlib}
 
 ${destlib}: ftplibhelp.c
-	%CC% -shared %CCSHARED% %CCFLAGS% -o ${destlib} ftplibhelp.c 
+	%CC% -shared %CCSHARED% %CCFLAGS% -o ${destlib} ftplibhelp.c
