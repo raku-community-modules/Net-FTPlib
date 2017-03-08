@@ -3,7 +3,7 @@ use v6;
 use NativeCall;
 
 constant ftplib 	= 'ftp';
-constant ftphelplib	= %?RESOURCES<ftphelplib>.Str;
+constant ftphelplib	= %?RESOURCES<libraries/ftplibhelp>.Str;
 
 sub FtpInit() is native(ftplib) { * }
 
@@ -63,25 +63,25 @@ class Ftp {
 
 	# my $debug := cglobal(ftplib, 'ftplib_debug', int32);
 
+	sub FtpHasUINT64MAX() returns int32 is native(ftphelplib) { * }
+
 	sub FtpDebugHelp(bool) is native(ftphelplib) { * }
 
 	sub FtpSite(Str, Pointer) returns int32 is native(ftplib) { * }
 
-	sub FtpLastResponse(Pointer) returns Str is native(ftplib) { * }
+	sub FtpLastResponse(Pointer) returns CArray[uint8] is native(ftplib) { * }
 
-	sub FtpSysType(Str, int32, Pointer) returns int32 is native(ftplib) { * }
+	sub FtpSysType(CArray[uint8], int32, Pointer) returns int32 is native(ftplib) { * }
 
 	sub FtpSize(Str, uint32 is rw, int8, Pointer) returns int32 is native(ftplib) { * }
 
-	# sub FtpSizeLong(Str, uint64 is rw, int8, Pointer) returns int32 is native(ftplib) { * }
+	sub FtpSizeLong(Str, uint64 is rw, int8, Pointer) returns int32 is native(ftplib) { * }
 
-	sub FtpSizeHelp(Str, uint64 is rw, int8, Pointer) returns int32 is native(ftphelplib) { * }
-
-	sub FtpModDate(Str, Str, int32, Pointer) returns int32 is native(ftplib) { * }
+	sub FtpModDate(Str, CArray[uint8], int32, Pointer) returns int32 is native(ftplib) { * }
 
 	# sub FtpSetCallback(CallBackOpt is rw, Pointer) returns int32 is native(ftplib) { * }
 
-	sub FtpCallbackHelp( &cb (Pointer, uint64, Pointer), Pointer, uint32, uint32, Pointer) returns int32 is native(ftphelplib) { * }
+	sub FtpCallbackHelp( &cb (Pointer, uint64, Pointer --> int32), Pointer, uint32, uint32, Pointer) returns int32 is native(ftphelplib) { * }
 
 	sub FtpClearCallback(Pointer) returns int32 is native(ftplib) { * }
 
@@ -131,7 +131,7 @@ class Ftp {
 
 	sub FtpClose(Pointer) returns int32 is native(ftplib) { * }
 
-	#| for C<&setOption>
+	#| for C<&set-option>
 	my enum Opt is export (
 		CONNMODE		=> 1,
 		CALLBACK 		=> 2,
@@ -176,18 +176,13 @@ class Ftp {
 		self;
 	}
 
-	method !__handle_exception_1($ret, $msg = "", &cb = Block) returns Ftp {
-		self!__handle_exception($ret, 0, $msg, &cb);
-		self;
-	}
-
 	method login() {
 		$!netbuf = Pointer.new(0);
 		self!__handle_exception_0(FtpConnect($!host, $!netbuf), {
 			$!netbuf = Pointer;
 		});
 		self!__handle_exception_0(FtpLogin($!user, $!pass, $!netbuf));
-		self.setOption(Opt::CONNMODE, ConnMode::PASSIVE) if $!passive;
+		self.set-option(Opt::CONNMODE, ConnMode::PASSIVE) if $!passive;
 		self;
 	}
 
@@ -199,7 +194,7 @@ class Ftp {
 		self;
 	}
 
-	method setOption(Opt $opt, ConnMode $cm) {
+	method set-option(Opt $opt, ConnMode $cm) {
 		self!__handle_exception_0(FtpOptions(int32.new($opt.Int), long.new($cm.Int), $!netbuf));
 	}
 
@@ -249,13 +244,13 @@ class Ftp {
 		self!__handle_exception_0(FtpRename($src, $dst, $!netbuf));
 	}
 
-	my class FtpDataConn {
+	my class DataConn is export {
 		has $.netbuf;
 		has $.error;
 		has $.mode;
 
 		method !__check_mode($mode) {
-			if $!mode ne $mode {
+			if $!mode.defined && $!mode ne $mode {
 				X::Ftp::Error.new(msg => "Can do a {$mode} in {$!mode} mode.").throw();
 			}
 		}
@@ -294,20 +289,71 @@ class Ftp {
 		my $netbuf = Pointer.new(0);
 		self!__handle_exception_0(FtpAccess($path, int32.new($type.value), int32.new(
 			$mode.value.ord()), $!netbuf, $netbuf));
-		return FtpDataConn.new(:$netbuf, mode => ($type == AccessType::FILE_WRITE ?? 'write' !! 'read'));
+		return DataConn.new(:$netbuf, mode => ($type == AccessType::FILE_WRITE ?? 'write' !! 'read'));
 	}
 
 	method site(Str $command) {
 		self!__handle_exception_0(FtpSite($command, $!netbuf));
 	}
 
-	method lastResponse() {
-		FtpLastResponse($!netbuf);
+	method last-response() {
+		my @ca := FtpLastResponse($!netbuf);
+		my Buf $buf .= new;
+		loop (my $i = 0;@ca[$i] != 0;$i++) {
+			$buf[$i] = @ca[$i];
+		}
+		$buf[$buf.elems] = 0;
+		$buf;
 	}
 
 	method systype(Int $size) {
 		my CStr $cstr .= new($size);
 		self!__handle_exception_0(FtpSysType($cstr.buf, $cstr.len, $!netbuf));
 		return $cstr.Buf;
+	}
+
+	method size(Str $path, AccessMode :$mode = AccessMode::ASCII) {
+		my uint32 $ret = 0;
+		self!__handle_exception_0(FtpSize($path, $ret, int8.new($mode.value.ord()), $!netbuf));
+		return $ret;
+	}
+
+	method size-long(Str $path, AccessMode :$mode = AccessMode::ASCII) {
+		my $ret;
+		if FtpHasUINT64MAX() {
+			$ret = uint64.new(0);
+			self!__handle_exception_0(FtpSizeLong($path, $ret, int8.new($mode.value.ord()), $!netbuf));
+		}
+		else {
+			$ret = self.size($path, :$mode);
+		}
+		return $ret;
+	}
+
+	method mod-data(Str $path, int $size = 128) {
+		my CStr $cstr .= new($size);
+		self!__handle_exception_0(FtpModDate($path, $cstr.buf, $cstr.len, $!netbuf));
+		return $cstr.Buf;
+	}
+
+	#|  cb(DataConn, Int, $ --> int32)
+	method set-callback( &cb, Int $arg, uint32 $bytesXferred, uint32 $idleTime) {
+		sub callback64(Pointer $dc, uint64 $bytesXferred, Pointer $arg) {
+			my @ca := nativecast(CArray[int32], $arg);
+			return int32.new(&cb(DataConn.new(netbuf => $dc), Int.new($bytesXferred), Int.new(@ca[0])));
+		}
+		sub callback32(Pointer $dc, uint32 $bytesXferred, Pointer $arg) {
+			my @ca := nativecast(CArray[int32], $arg);
+			return int32.new(&cb(DataConn.new(netbuf => $dc), Int.new($bytesXferred), Int.new(@ca[0])));
+		}
+		my $ca = CArray[int32].new;
+		$ca[0] = int32.new($arg);
+		my $real-arg = nativecast(Pointer, $ca);
+		self!__handle_exception_0(FtpCallbackHelp(FtpHasUINT64MAX() ?? &callback64 !! &callback32,
+			$real-arg, $bytesXferred, $idleTime, $!netbuf));
+	}
+
+	method clear-callback() {
+		self!__handle_exception_0(FtpClearCallback($!netbuf));
 	}
 }
