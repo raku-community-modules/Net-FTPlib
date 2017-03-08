@@ -15,9 +15,9 @@
     },
 	"auth" : "github:araraloren",
     "authors" : "Loren",
-    "source-url"  : "git://github.com/araraloren/Net-FTPlib.git",
+    "source-url"  : "https://github.com/araraloren/Net-FTPlib/archive/v0.1.0.zip",
     "support" : {
         "bugtracker" : "https://github.com.araraloren/Net-FTPlib/issues",
-        "source" : "git://github.com/araraloren/Net-FTPlib.git"
+        "source" : "https://github.com/araraloren/Net-FTPlib/tree/v0.1.0"
     }
 }
