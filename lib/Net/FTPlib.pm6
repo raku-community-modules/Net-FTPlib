@@ -55,11 +55,12 @@ class CStr {
 
 class Ftp {
 	has $!netbuf;
-	has Str $.host;
-	has Str $.user;
-	has Str $.pass;
-	has     $.passive;
-	has 	$.error;
+	has $.host is rw;
+	has $.port is rw;
+	has $.user is rw;
+	has $.pass is rw;
+	has $.passive is rw;
+	has $.error;
 
 	# my $debug := cglobal(ftplib, 'ftplib_debug', int32);
 
@@ -93,7 +94,7 @@ class Ftp {
 
 	sub FtpQuit(Pointer) is native(ftplib) { * }
 
-	sub FtpOptions(int32, int64, Pointer) returns int32 is native(ftplib) { * }
+	sub FtpOptions(int32, long, Pointer) returns int32 is native(ftplib) { * }
 
 	#| Directory Functions
 
@@ -162,6 +163,10 @@ class Ftp {
 		FILE_WRITE	=> 4,
 	);
 
+	method new(Str :$host, :$port = 21, Str :$user, Str :$pass, :$passive = True) {
+		self.bless(:$host, :$port, :$user, :$pass, :$passive);
+	}
+
 	method !__handle_exception($ret, $good, $msg, &cb) {
 		if $ret != $good {
 			note $ret;
@@ -178,11 +183,11 @@ class Ftp {
 
 	method login() {
 		$!netbuf = Pointer.new(0);
-		self!__handle_exception_0(FtpConnect($!host, $!netbuf), {
+		self!__handle_exception_0(FtpConnect("{$!host}:{$!port}", $!netbuf), {
 			$!netbuf = Pointer;
 		});
 		self!__handle_exception_0(FtpLogin($!user, $!pass, $!netbuf));
-		self.set-option(Opt::CONNMODE, ConnMode::PASSIVE) if $!passive;
+		self.set-option(Opt::CONNMODE, ConnMode::PORT) unless $!passive;
 		self;
 	}
 
@@ -195,7 +200,18 @@ class Ftp {
 	}
 
 	method set-option(Opt $opt, ConnMode $cm) {
+		$!passive = $cm == ConnMode::PASSIVE if $opt == Opt::CONNMODE;
 		self!__handle_exception_0(FtpOptions(int32.new($opt.Int), long.new($cm.Int), $!netbuf));
+	}
+
+	method set-passive() {
+		$!passive = True;
+		self.set-option(Opt::CONNMODE, ConnMode::PASSIVE);
+	}
+
+	method set-port() {
+		$!passive = False;
+		self.set-option(Opt::CONNMODE, ConnMode::PORT);
 	}
 
 	method chdir(Str $path) {
