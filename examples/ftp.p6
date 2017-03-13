@@ -4,6 +4,7 @@ use v6;
 use Readline;
 use Net::FTPlib;
 use Getopt::Kinoko;
+use Terminal::Readsecret;
 use Getopt::Kinoko::OptionSet;
 use Getopt::Kinoko::Exception;
 
@@ -28,8 +29,41 @@ $repl.append(
 		note "host: {$host}:{$repl.data.ftp.port // FTP_PORT}[{$status}]";
 		note "user: {$repl.data.ftp.user // 'anonymous'}";
 		note "mode: {$repl.data.ftp.passive ?? 'passive' !! 'port'}";
-		note "flag: {$repl.data.binary ?? 'binary' !! 'ascii'}"; 
+		note "flag: {$repl.data.binary ?? 'binary' !! 'ascii'}";
+		True;
 	}
+);
+$repl.append(
+	name => 'exit',
+	main => -> @args, $opts {
+		$repl.data.ftp.quit();
+		note "Goodbye!";
+		exit(0);
+	}
+);
+$repl.append(
+	name => 'user',
+	main => -> @args, $opts {
+		return False if @args.elems == 1;
+		@args.shift;
+		my \ftp := $repl.data.ftp;
+
+		ftp.user = @args.shift.value;
+		ftp.pass = @args.elems == 0 ?? getsecret("password:") !! @args.shift.value;
+		if ftp.host.defined {
+			try {
+				ftp.login();
+				CATCH {
+					default {
+						note "Login failed!";
+					}
+				}
+			}
+		} else {
+			note "Host not set!";
+		}
+		True;
+	} 
 );
 $repl.main-loop();
 
@@ -43,9 +77,10 @@ sub initFtpConn {
 	$optset.push-option('u|user=s', :comment("set ftp username [anonymous]"));
 	$optset.push-option(' |pass=s', :comment("set ftp password"));
 	getopt($optset);
-	if $optset<h> {
+	if $optset<help> {
 		note "Usage:\n {$*PROGRAM-NAME} {$optset.usage()}\n";
 		note "{@$_.join("")}\n" for $optset.comment(4);
+		exit (0);
 	} else {
 		my FtpConn $fc .= new();
 
@@ -114,10 +149,10 @@ class REPL {
 					my @cmds = $!getopt.keys();
 
 					@args.shift;
-					if @args == 0 {
+					if @args.elems == 0 {
 						note @cmds.join(" ");
 					} else {
-						note &!help('help', $!getopt{@args.shift}, %!command<help>[0]);
+						&!help( 'help', $!getopt{@args.shift.value}, %!command<help>[0]);
 					}
 				}
 			);
@@ -144,7 +179,9 @@ class REPL {
 				if $opts<h> {
 					&!help($name, $opts, $ap);
 				} else {
-					&main(@args, $opts) if &main;
+					unless &main && &main(@args, $opts) != False {
+						&!help($name, $opts, $ap);
+					}
 				}
 			});
 			$!getopt.push($name, &add-option ?? &add-option($opts) !! $opts);
