@@ -36,34 +36,42 @@ $repl.append(
 $repl.append(
 	name => 'exit',
 	main => -> @args, $opts {
-		$repl.data.ftp.quit();
+		$repl.data.logout();
 		note "Goodbye!";
 		exit(0);
 	}
 );
+$repl.alias('exit', 'quit');
 $repl.append(
 	name => 'user',
 	main => -> @args, $opts {
-		return False if @args.elems == 1;
 		@args.shift;
-		my \ftp := $repl.data.ftp;
-
-		ftp.user = @args.shift.value;
-		ftp.pass = @args.elems == 0 ?? getsecret("password:") !! @args.shift.value;
-		if ftp.host.defined {
-			try {
-				ftp.login();
-				CATCH {
-					default {
-						note "Login failed!";
-					}
-				}
-			}
+		if @args.elems == 0 {
+			False
 		} else {
-			note "Host not set!";
+			my \fc := $repl.data;
+
+			fc.user = @args.shift.value;
+			fc.pass = @args.elems == 0 ?? getsecret("password:") !! @args.shift.value;
+			fc.login();
+			True;
+		}
+	} 
+);
+$repl.append(
+	name => 'ls',
+	main => -> @args, $opts {
+		@args.shift;
+		my \fc := $repl.data;
+
+		fc.tryLogin();
+		if @args.elems == 0 {
+			fc.ftp.dir(fc.ftp.pwd.decode('UTF8'));
+		} else {
+			fc.ftp.dir(@args.shift.value);
 		}
 		True;
-	} 
+	}
 );
 $repl.main-loop();
 
@@ -76,6 +84,7 @@ sub initFtpConn {
 	$optset.push-option('p|port=i', FTP_PORT, :comment("set ftp host port [{FTP_PORT}]"));
 	$optset.push-option('u|user=s', :comment("set ftp username [anonymous]"));
 	$optset.push-option(' |pass=s', :comment("set ftp password"));
+	$optset.push-option('pp|pass-prompt=b', :comment("set ftp password"));
 	getopt($optset);
 	if $optset<help> {
 		note "Usage:\n {$*PROGRAM-NAME} {$optset.usage()}\n";
@@ -84,10 +93,11 @@ sub initFtpConn {
 	} else {
 		my FtpConn $fc .= new();
 
-		$fc.ftp.host = $optset<host> if $optset.has-value('host');
-		$fc.ftp.user = $optset<user> if $optset.has-value('user');
-		$fc.ftp.port = $optset<port> if $optset.has-value('port');
-		$fc.ftp.pass = $optset<pass> if $optset.has-value('pass');
+		$fc.host = $optset<host> if $optset.has-value('host');
+		$fc.user = $optset<user> if $optset.has-value('user');
+		$fc.port = $optset<port> if $optset.has-value('port');
+		$fc.pass = $optset<pass> if $optset.has-value('pass');
+		$fc.pass = getsecret('password:') if $optset<pp>;
 
 		return $fc;
 	}
@@ -168,6 +178,10 @@ class REPL {
 		%!command{$name} = [$args-prompt, &add-option, &main];
 	}
 
+	method alias(Str $from, Str $to) {
+		%!command{$to} := %!command{$from};
+	}
+
 	method !__make_getopt() {
 		$!getopt = Getopt.new;
 		for %!command.keys -> $name {
@@ -213,9 +227,81 @@ class REPL {
 }
 
 class FtpConn {
-	has $.ftp = Ftp.new();
+	has $.ftp;
 	has $.binary is rw = False;
 	has $.logined is rw = False;
+	has $.host is rw;
+	has $.port is rw;
+	has $.user is rw;
+	has $.pass is rw;
+
+	method loginAsAnonymous() {
+		my %__anonymous = 
+			anonymous 	=> "anonymous\@{$!host}",
+			anonymous 	=> '',
+			ftp 		=> 'ftp',
+			ftp 		=> '',
+		;	
+
+		for %__anonymous.kv -> ($user, $pass) {
+			$!ftp = Ftp.new(:$!host, :$!port, :$user, :$pass);
+			try {
+				$!ftp.login();
+				$!logined = True;
+				last;
+				CATCH {
+					default {		
+					}
+				}
+			}
+		}
+		note "Login failed!" unless $!logined;
+	}
+
+	method login() {
+		if $!logined {
+			note "Already logined!";
+		} else {
+			unless ?$!host {
+				note "Ftp host not set!";
+				return;
+			}
+			$!ftp = Ftp.new(:$!host, :$!port, :$!user, :$!pass);
+			try {
+				$!ftp.login();
+				$!logined = True;
+				CATCH {
+					default {
+						note "Login failed!";
+					}
+				}
+			}
+		}
+	}
+
+	method tryLogin() {
+		if $!logined {
+			return;
+		} else {
+			?$!user ?? self.login() !! self.loginAsAnonymous();
+		}
+	}
+
+	method logout() {
+		if !$!logined {
+			note "Not logined!";
+		} else {
+			try {
+				$!ftp.quit();
+				$!logined = False;
+				CATCH {
+					default {
+						note "Logout failed!";
+					}
+				}
+			}
+		}
+	}
 }
 
 
