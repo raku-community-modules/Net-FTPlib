@@ -55,11 +55,11 @@ class CStr {
 
 class Ftp {
 	has $!netbuf;
-	has $.host is rw;
-	has $.port is rw;
-	has $.user is rw;
-	has $.pass is rw;
-	has $.passive is rw;
+	has $.host;
+	has $.port;
+	has $.user;
+	has $.pass;
+	has $.passive;
 	has $.error;
 
 	# my $debug := cglobal(ftplib, 'ftplib_debug', int32);
