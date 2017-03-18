@@ -3,6 +3,25 @@
 
 A Perl 6 bind for http://nbpfaus.net/~pfau/ftplib[ftplib].
 
+== Examples
+
+A simple examples 
+
+[source, perl6]
+----------------------
+use Net::FTPlib;
+
+my Ftp $ftp .= new(:host(hostip), :user(username), :pass(password));
+
+$ftp.login();
+$ftp.get('somefile', 'outfile');
+$ftp.quit();
+----------------------
+
+== Document
+
+See http://nbpfaus.net/~pfau/ftplib/ftplib.html[ftplib-document].
+
 == Installation
 
 * install with panda
