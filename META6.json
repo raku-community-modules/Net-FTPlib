@@ -1,7 +1,7 @@
 {
     "perl"        : "6.c",
     "name"        : "Net::FTPlib",
-    "version"     : "0.1.0",
+    "version"     : "0.2.0",
     "description" : "A Perl 6 binding for ftplib (http://nbpfaus.net/~pfau/ftplib)",
     "depends"     : [],
     "build-depends" : [
@@ -15,9 +15,9 @@
     },
 	"auth" : "github:araraloren",
     "authors" : "Loren",
-    "source-url"  : "https://github.com/araraloren/Net-FTPlib/archive/v0.1.0.zip",
+    "source-url"  : "https://github.com/araraloren/Net-FTPlib/archive/v0.2.0.zip",
     "support" : {
         "bugtracker" : "https://github.com.araraloren/Net-FTPlib/issues",
-        "source" : "https://github.com/araraloren/Net-FTPlib/tree/v0.1.0"
+        "source" : "https://github.com/araraloren/Net-FTPlib/tree/v0.2.0"
     }
 }
