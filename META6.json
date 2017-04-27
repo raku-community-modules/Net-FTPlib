@@ -1,6 +1,7 @@
 {
     "perl"        : "6.c",
     "name"        : "Net::FTPlib",
+    "license"     : "MIT",
     "version"     : "0.2.0",
     "description" : "A Perl 6 binding for ftplib (http://nbpfaus.net/~pfau/ftplib)",
     "depends"     : [],
