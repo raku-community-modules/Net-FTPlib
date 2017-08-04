@@ -3,6 +3,10 @@
 
 A Perl 6 bind for http://nbpfaus.net/~pfau/ftplib[ftplib].
 
+image:https://travis-ci.org/araraloren/Net-FTPlib.svg?branch=master["Build Status", link="https://travis-ci.org/araraloren/Net-FTPlib"]
+
+image:https://ci.appveyor.com/api/projects/status/yi0qo4aytw8efq90/branch/master?svg=true["Windows Build Status", link="https://ci.appveyor.com/api/projects/status/yi0qo4aytw8efq90?svg=true"]
+
 == Examples
 
 A simple examples 
