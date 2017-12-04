@@ -28,10 +28,6 @@ See http://nbpfaus.net/~pfau/ftplib/ftplib.html[ftplib-document].
 
 == Installation
 
-* install with panda
-
-    panda install Net::FTPlib
-
 * install with zef
 
     zef install Net::FTPlib
