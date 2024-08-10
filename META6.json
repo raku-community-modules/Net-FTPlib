@@ -3,7 +3,7 @@
     "name"        : "Net::FTPlib",
     "license"     : "MIT",
     "version"     : "0.2.0",
-    "description" : "A Perl 6 binding for ftplib (http://nbpfaus.net/~pfau/ftplib)",
+    "description" : "A Raku binding for ftplib (http://nbpfaus.net/~pfau/ftplib)",
     "depends"     : [],
     "build-depends" : [
         "LibraryMake"
@@ -12,13 +12,13 @@
         "libraries/ftplibhelp"
     ],
     "provides"    : {
-        "Net::FTPlib" : "lib/Net/FTPlib.pm6"
+        "Net::FTPlib" : "lib/Net/FTPlib.rakumod"
     },
-	"auth" : "github:araraloren",
+	"auth" : "zef:raku-community-modules",
     "authors" : "Loren",
-    "source-url"  : "https://github.com/araraloren/Net-FTPlib/archive/v0.2.0.zip",
+    "source-url"  : "https://github.com/raku-community-modules/Net-FTPlib/",
     "support" : {
-        "bugtracker" : "https://github.com.araraloren/Net-FTPlib/issues",
-        "source" : "https://github.com/araraloren/Net-FTPlib/tree/v0.2.0"
+        "bugtracker" : "https://github.com/raku-community/Net-FTPlib/issues",
+        "source" : "https://github.com/raku-community-modules/Net-FTPlib"
     }
 }
