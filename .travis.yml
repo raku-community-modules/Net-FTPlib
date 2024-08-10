@@ -1,9 +1,0 @@
-language: perl6
-
-perl6:
-    - latest
-
-install:
-    - sudo apt-get install ftplib3
-    - rakudobrew build zef
-    - zef install .

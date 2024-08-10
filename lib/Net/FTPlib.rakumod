@@ -1,5 +1,3 @@
-
-use v6;
 use NativeCall;
 
 constant ftplib 	= 'ftp';

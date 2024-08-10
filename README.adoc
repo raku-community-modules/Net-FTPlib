@@ -1,17 +1,13 @@
 = Net-FTPlib
 :toc-title: contents
 
-A Perl 6 bind for http://nbpfaus.net/~pfau/ftplib[ftplib].
-
-image:https://travis-ci.org/araraloren/Net-FTPlib.svg?branch=master["Build Status", link="https://travis-ci.org/araraloren/Net-FTPlib"]
-
-image:https://ci.appveyor.com/api/projects/status/yi0qo4aytw8efq90/branch/master?svg=true["Windows Build Status", link="https://ci.appveyor.com/api/projects/status/yi0qo4aytw8efq90?svg=true"]
+A Raku binding for http://nbpfaus.net/~pfau/ftplib[ftplib].
 
 == Examples
 
 A simple examples 
 
-[source, perl6]
+[source, raku]
 ----------------------
 use Net::FTPlib;
 
